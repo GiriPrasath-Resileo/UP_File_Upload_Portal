@@ -29,7 +29,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
           ref={ref}
           {...props}
           className={clsx(
-            'w-full rounded-lg border text-[0.95rem] text-slate-900 placeholder-slate-400 transition-all duration-150',
+            'w-full rounded-lg border text-[0.95rem] text-slate-900 placeholder-slate-400 transition-all duration-200',
             'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
             'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
             leftAdornment  ? 'pl-10'  : 'pl-3.5',

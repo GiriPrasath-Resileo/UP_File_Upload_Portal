@@ -135,9 +135,9 @@ export function DataTable<T extends Record<string, unknown>>({
   const hasActions = !!(actions || onEdit);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_6px_16px_rgba(0,0,0,0.06)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_2px_6px_rgba(0,0,0,0.05),0_12px_24px_rgba(0,0,0,0.08)] animate-card-enter">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+      <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white">
         <div className="flex-1 min-w-48">
           <Input
             placeholder={searchPlaceholder}
@@ -163,6 +163,7 @@ export function DataTable<T extends Record<string, unknown>>({
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={handleExport}
+            className="transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
             leftIcon={
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round"
@@ -179,7 +180,7 @@ export function DataTable<T extends Record<string, unknown>>({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
+            <tr className="border-b border-slate-200/80 bg-slate-50/70">
               {selectable && (
                 <th className="pl-4 pr-2 py-3.5 w-10">
                   <input type="checkbox" checked={allSelected} onChange={toggleAll}
@@ -198,7 +199,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   <div className="flex items-center gap-1">
                     {col.sortable !== false ? (
                       <button
-                        className="flex items-center gap-1 hover:text-slate-800 transition-colors"
+                        className="flex items-center gap-1 hover:text-slate-800 transition-colors duration-200 rounded px-1 py-0.5 -mx-1 -my-0.5 hover:bg-slate-100/80"
                         onClick={() => handleSort(String(col.key))}
                       >
                         {col.header}
@@ -208,8 +209,8 @@ export function DataTable<T extends Record<string, unknown>>({
                     {col.filterable !== false && (
                       <button
                         className={clsx(
-                          'p-0.5 rounded hover:bg-slate-200 transition-colors',
-                          colFilters[String(col.key)] ? 'text-indigo-600' : 'text-slate-400'
+                          'p-1 rounded-md hover:bg-slate-200/80 transition-all duration-200',
+                          colFilters[String(col.key)] ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-500 hover:text-slate-700'
                         )}
                         onClick={e => {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -240,7 +241,7 @@ export function DataTable<T extends Record<string, unknown>>({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100/80">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
@@ -266,11 +267,12 @@ export function DataTable<T extends Record<string, unknown>>({
                 return (
                   <tr
                     key={rowId}
+                    style={{ animationDelay: `${Math.min(idx * 25, 300)}ms` }}
                     className={clsx(
-                      'transition-colors duration-100',
-                      idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40',
-                      'hover:bg-indigo-50/40',
-                      selected.has(rowId) && 'bg-indigo-50'
+                      'animate-table-row transition-all duration-200 ease-out',
+                      idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30',
+                      'hover:bg-indigo-50/50 hover:shadow-[inset_0_1px_0_0_rgba(99,102,241,0.08)]',
+                      selected.has(rowId) && 'bg-indigo-50/80'
                     )}
                   >
                     {selectable && (
@@ -290,7 +292,7 @@ export function DataTable<T extends Record<string, unknown>>({
                           {onEdit && (
                             <button
                               onClick={() => onEdit(row)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                              className="p-1.5 rounded-lg text-teal-600 hover:text-teal-700 bg-teal-50/80 hover:bg-teal-100 transition-all duration-200 active:scale-95"
                               title="Edit"
                             >
                               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -313,7 +315,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
       {/* Pagination */}
       {onPageChange && totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-gradient-to-t from-slate-50/60 to-white">
           <p className="text-[0.95rem] text-slate-500">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalRows ?? 0)} of {totalRows ?? 0}
           </p>
@@ -326,10 +328,10 @@ export function DataTable<T extends Record<string, unknown>>({
                   key={p}
                   onClick={() => onPageChange(p)}
                   className={clsx(
-                    'w-8 h-8 text-[0.95rem] rounded-lg transition-colors',
+                    'w-8 h-8 text-[0.95rem] rounded-lg transition-all duration-200',
                     p === page
-                      ? 'bg-indigo-600 text-white font-semibold'
-                      : 'text-slate-600 hover:bg-slate-200'
+                      ? 'bg-indigo-600 text-white font-semibold shadow-sm ring-1 ring-indigo-500/20'
+                      : 'text-slate-600 hover:bg-slate-200/80 hover:text-slate-800 active:scale-95'
                   )}
                 >
                   {p}

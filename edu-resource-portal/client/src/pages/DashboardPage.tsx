@@ -76,27 +76,42 @@ export function DashboardPage() {
     }
   }
 
+  const mediumVariant = (m: string) =>
+    ({ HINDI: 'warning', ENGLISH: 'indigo', URDU: 'violet', SANSKRIT: 'teal' }[m ?? ''] ?? 'default');
+  const typeVariant = (t: string) =>
+    ({ SUBJECTIVE_ASSESSMENTS: 'info', OBJECTIVE_ASSESSMENTS: 'violet', NOTEBOOKS: 'success', WORKSHEETS: 'warning', CURSIVE_WRITING_NOTEBOOKS: 'purple' }[t ?? ''] ?? 'default');
+  const genderVariant = (g: string) =>
+    ({ MALE: 'info', FEMALE: 'fuchsia', OTHER: 'default' }[g ?? ''] ?? 'default');
+  const handVariant = (h: string) =>
+    ({ RIGHT: 'success', LEFT: 'warning', AMBIDEXTROUS: 'violet' }[h ?? ''] ?? 'default');
+  const subjectVariant = (s: string) =>
+    ({ HINDI: 'warning', ENGLISH: 'indigo', MATHS: 'teal', SCIENCE: 'success', SOCIAL_SCIENCE: 'purple', SANSKRIT: 'violet' }[s ?? ''] ?? 'info');
+
   const COLUMNS: Column<Upload>[] = [
     {
       key: 'fileNumber',
       header: 'File No.',
       render: r => (
-        <span className="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+        <button
+          type="button"
+          onClick={() => handleViewFile(r)}
+          className="font-mono text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 px-2.5 py-1 rounded-lg transition-all duration-200 active:scale-[0.98]"
+        >
           {r.fileNumber}
-        </span>
+        </button>
       ),
     },
     { key: 'district',   header: 'District' },
     { key: 'block',      header: 'Block' },
     { key: 'schoolName', header: 'School', render: r => <span className="max-w-40 truncate block" title={r.schoolName}>{r.schoolName}</span> },
-    { key: 'medium',     header: 'Medium',  render: r => <Badge variant="default">{fmtEnum(r.medium)}</Badge> },
-    { key: 'classGrade', header: 'Class' },
-    { key: 'subject',    header: 'Subject',  render: r => fmtEnum(r.subject) },
-    { key: 'sampleType', header: 'Type',     render: r => <span className="text-xs text-slate-500">{fmtEnum(r.sampleType)}</span> },
-    { key: 'gender',     header: 'Gender',   render: r => fmtEnum(r.gender) },
-    { key: 'dominantHand', header: 'Hand',   render: r => fmtEnum(r.dominantHand) },
-    { key: 'createdAt',  header: 'Date',     render: r => fmtDate(r.createdAt) },
-    { key: 'status',     header: 'Status',   render: r => statusBadge(r.status), filterable: false },
+    { key: 'medium',     header: 'Medium',  render: r => <Badge variant={mediumVariant(r.medium ?? '')}>{fmtEnum(r.medium)}</Badge> },
+    { key: 'classGrade', header: 'Class',   render: r => <Badge variant="indigo">{r.classGrade}</Badge> },
+    { key: 'subject',    header: 'Subject', render: r => <Badge variant={subjectVariant(r.subject ?? '')}>{fmtEnum(r.subject)}</Badge> },
+    { key: 'sampleType', header: 'Type',    render: r => <Badge variant={typeVariant(r.sampleType ?? '')}>{fmtEnum(r.sampleType)}</Badge> },
+    { key: 'gender',     header: 'Gender',  render: r => <Badge variant={genderVariant(r.gender ?? '')}>{fmtEnum(r.gender)}</Badge> },
+    { key: 'dominantHand', header: 'Hand',  render: r => <Badge variant={handVariant(r.dominantHand ?? '')}>{fmtEnum(r.dominantHand)}</Badge> },
+    { key: 'createdAt',  header: 'Date',    render: r => fmtDate(r.createdAt) },
+    { key: 'status',     header: 'Status',  render: r => statusBadge(r.status), filterable: false },
   ];
 
   return (
@@ -231,7 +246,7 @@ export function DashboardPage() {
           <>
             <button
               onClick={() => handleViewFile(row)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+              className="p-1.5 rounded-lg text-sky-600 hover:text-sky-700 bg-sky-50/80 hover:bg-sky-100 transition-all duration-200 active:scale-95"
               title="View PDF"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,7 +259,7 @@ export function DashboardPage() {
             {isAdmin && (
               <button
                 onClick={() => setDeleteTarget(row)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 bg-rose-50/80 hover:bg-rose-100 transition-all duration-200 active:scale-95"
                 title="Delete"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -42,6 +42,18 @@
   .animate-slide-down {
     animation: slideDown 0.25s ease-out;
   }
+  .animate-table-row {
+    animation: tableRowIn 0.35s ease-out both;
+  }
+  .animate-card-enter {
+    animation: cardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-table-row,
+    .animate-card-enter {
+      animation: none;
+    }
+  }
 }
 
 @keyframes slideUp {
@@ -55,4 +67,12 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+@keyframes tableRowIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(6px) scale(0.998); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
