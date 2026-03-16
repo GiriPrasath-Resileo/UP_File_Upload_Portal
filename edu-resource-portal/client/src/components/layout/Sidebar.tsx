@@ -65,21 +65,21 @@ const NAV_ITEMS: NavItem[] = [
     admin: false,
   },
   {
-    to: '/coverage',
-    label: 'Coverage',
+    href: `${import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '') ?? 'http://localhost:5000'}/api-docs`,
+    label: 'API Docs',
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" {...iconProps}>
-        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
       </svg>
     ),
     admin: true,
   },
   {
-    href: `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:5000'}/api-docs`,
-    label: 'API Docs',
+    to: '/coverage',
+    label: 'Coverage',
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" {...iconProps}>
-        <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
     admin: true,
@@ -113,7 +113,7 @@ export function Sidebar({ collapsed, isMobile, onToggleCollapse, onClose }: Side
     );
 
   const visibleItems = NAV_ITEMS.filter(item => !item.admin || isAdmin);
-  // Separate main items from the footer items (About and API Docs are the last ones)
+  // Separate main items from the footer items (About and API Docs are in the footer)
   const mainItems   = visibleItems.filter(item => item.to !== '/about' && !item.href);
   const footerItems = visibleItems.filter(item => item.to === '/about' || item.href);
 

@@ -223,7 +223,29 @@ const swaggerSpec = {
   },
 };
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+const dashboardUrl = new URL('/dashboard', env.CLIENT_ORIGIN).href;
+
+app.get('/api-docs', (_req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>API Docs — EduResource Portal</title>
+</head>
+<body style="margin:0;font-family:system-ui,sans-serif;">
+  <div style="padding:12px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;">
+    <a href="${dashboardUrl}" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#334155;font-weight:500;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to App
+    </a>
+  </div>
+  <iframe src="/api-docs/ui/" style="width:100%;height:calc(100vh - 49px);border:0"></iframe>
+</body>
+</html>
+  `);
+});
+app.use('/api-docs/ui', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'EduResource API Docs',
   customCss: '.swagger-ui .topbar { display: none }',
 }));

@@ -112,6 +112,45 @@ export function AboutPage() {
         </div>
       </div>
 
+      {/* Pros & Pain Points Addressed */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 className="text-base font-semibold text-slate-800 mb-4">Advantages & Pain Points Addressed</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-sm font-semibold text-indigo-700 mb-3 flex items-center gap-2">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Key Advantages
+            </h3>
+            <ul className="space-y-2 text-sm text-slate-600">
+              <li className="flex gap-2"><span className="text-emerald-500">•</span> Single platform for state-wide resource collection — no scattered spreadsheets or email attachments</li>
+              <li className="flex gap-2"><span className="text-emerald-500">•</span> Automatic file numbering eliminates manual tracking and duplicate IDs</li>
+              <li className="flex gap-2"><span className="text-emerald-500">•</span> Bulk upload with Excel manifest saves hours when processing hundreds of samples</li>
+              <li className="flex gap-2"><span className="text-emerald-500">•</span> District-scoped access keeps data compartmentalized and reduces errors</li>
+              <li className="flex gap-2"><span className="text-emerald-500">•</span> Secure S3 storage with presigned URLs — no public exposure of raw files</li>
+              <li className="flex gap-2"><span className="text-emerald-500">•</span> School master integration ensures consistent UDISE codes and metadata</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-amber-700 mb-3 flex items-center gap-2">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Pain Points Addressed
+            </h3>
+            <ul className="space-y-2 text-sm text-slate-600">
+              <li className="flex gap-2"><span className="text-amber-500">→</span> <strong>Lost or duplicate files:</strong> Centralized storage and unique IDs prevent mix-ups</li>
+              <li className="flex gap-2"><span className="text-amber-500">→</span> <strong>Manual tracking:</strong> Sequential file numbers replace manual registers</li>
+              <li className="flex gap-2"><span className="text-amber-500">→</span> <strong>Slow bulk processing:</strong> Parallel uploads and Excel manifest speed up large batches</li>
+              <li className="flex gap-2"><span className="text-amber-500">→</span> <strong>Inconsistent metadata:</strong> School master ensures correct district/block/UDISE</li>
+              <li className="flex gap-2"><span className="text-amber-500">→</span> <strong>Access control gaps:</strong> Role-based permissions and district scope enforce boundaries</li>
+              <li className="flex gap-2"><span className="text-amber-500">→</span> <strong>File number waste on failed uploads:</strong> Numbers only assigned on successful upload</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       {/* Tech Stack */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <h2 className="text-base font-semibold text-slate-800 mb-4">Tech Stack</h2>
