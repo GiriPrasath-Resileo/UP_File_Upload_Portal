@@ -10,6 +10,7 @@ import { SchoolMasterPage } from './pages/SchoolMasterPage';
 import { ManageUsersPage } from './pages/ManageUsersPage';
 import { AboutPage } from './pages/AboutPage';
 import CoverageDashboardPage from './pages/CoverageDashboardPage';
+import ArchitectureFlowPage from './pages/ArchitectureFlowPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ export default function App() {
               <Route path="/users"     element={<ManageUsersPage />} />
               <Route path="/about"     element={<AboutPage />} />
               <Route path="/coverage"  element={<CoverageDashboardPage />} />
+              <Route path="/architecture" element={<ArchitectureFlowPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
