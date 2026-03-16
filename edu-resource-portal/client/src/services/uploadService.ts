@@ -47,9 +47,17 @@ export async function downloadTemplate(): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+const PRESIGNED_URL_TIMEOUT_MS = 10_000;
+
 export async function getPresignedUrl(id: string): Promise<string> {
-  const res = await api.get<{ url: string }>(`/uploads/${id}/url`);
-  return res.data.url;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PRESIGNED_URL_TIMEOUT_MS);
+  try {
+    const res = await api.get<{ url: string }>(`/uploads/${id}/url`, { signal: controller.signal });
+    return res.data.url;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function deleteUpload(id: string): Promise<void> {

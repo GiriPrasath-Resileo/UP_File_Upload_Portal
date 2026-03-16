@@ -33,6 +33,7 @@ export function DashboardPage() {
   const [bulkOpen,       setBulkOpen]       = useState(false);
   const [deleteTarget,   setDeleteTarget]   = useState<Upload | null>(null);
   const [editTarget,     setEditTarget]     = useState<Upload | null>(null);
+  const [viewingId,      setViewingId]      = useState<string | null>(null);
   const [page,           setPage]           = useState(1);
   const [search,         setSearch]         = useState('');
   const [statusFilter,   setStatusFilter]   = useState('');
@@ -68,11 +69,15 @@ export function DashboardPage() {
   const updateMutation = useUpdateUpload();
 
   async function handleViewFile(row: Upload) {
+    setViewingId(row.id);
     try {
       const url = await getPresignedUrl(row.id);
       window.open(url, '_blank');
+      showToast('Opening PDF in new tab…', 'success');
     } catch {
       showToast('Failed to get download link', 'error');
+    } finally {
+      setViewingId(null);
     }
   }
 
@@ -95,9 +100,20 @@ export function DashboardPage() {
         <button
           type="button"
           onClick={() => handleViewFile(r)}
-          className="font-mono text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 px-2.5 py-1 rounded-lg transition-all duration-200 active:scale-[0.98]"
+          disabled={viewingId === r.id}
+          className="font-mono text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 px-2.5 py-1 rounded-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
         >
-          {r.fileNumber}
+          {viewingId === r.id ? (
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Opening…
+            </span>
+          ) : (
+            r.fileNumber
+          )}
         </button>
       ),
     },
@@ -246,15 +262,23 @@ export function DashboardPage() {
           <>
             <button
               onClick={() => handleViewFile(row)}
-              className="p-1.5 rounded-lg text-sky-600 hover:text-sky-700 bg-sky-50/80 hover:bg-sky-100 transition-all duration-200 active:scale-95"
+              disabled={viewingId === row.id}
+              className="p-1.5 rounded-lg text-sky-600 hover:text-sky-700 bg-sky-50/80 hover:bg-sky-100 transition-all duration-200 active:scale-95 disabled:opacity-70 disabled:cursor-wait"
               title="View PDF"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
+              {viewingId === row.id ? (
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
             </button>
             {isAdmin && (
               <button

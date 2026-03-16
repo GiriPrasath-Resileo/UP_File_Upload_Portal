@@ -138,10 +138,10 @@ const DIAGRAMS: Record<TabId, { chart: string; title: string; description: strin
     API->>uploadController: createUpload (multer)
     uploadController->>uploadController: UploadFormSchema.safeParse
     uploadController->>uploadServiceBE: createUpload(parsed, file)
-    uploadServiceBE->>fileNumberSvc: issueFileNumber
-    fileNumberSvc->>Prisma: fileSequence update
-    uploadServiceBE->>uploadServiceBE: buildS3Key
+    uploadServiceBE->>uploadServiceBE: buildS3KeyWithId (uuid)
     uploadServiceBE->>S3: PutObject
+    uploadServiceBE->>fileNumberSvc: issueFileNumber (only on S3 success)
+    fileNumberSvc->>Prisma: fileSequence update
     uploadServiceBE->>Prisma: create Upload record
     uploadServiceBE-->>uploadController: id, fileNumber
     uploadController-->>API: JSON

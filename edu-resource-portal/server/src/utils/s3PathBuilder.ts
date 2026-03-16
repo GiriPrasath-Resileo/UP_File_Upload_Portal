@@ -1,3 +1,6 @@
+const slug = (s: string) =>
+  s.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+
 export function buildS3Key(params: {
   state: string;
   district: string;
@@ -13,9 +16,6 @@ export function buildS3Key(params: {
   hand: string;
   fileNumber: string;
 }): string {
-  const slug = (s: string) =>
-    s.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-
   return [
     slug(params.state),
     slug(params.district),
@@ -30,5 +30,26 @@ export function buildS3Key(params: {
     slug(params.gender),
     slug(params.hand),
     `${slug(params.fileNumber)}.pdf`,
+  ].join('/');
+}
+
+/** Builds S3 key with a temporary ID (e.g. UUID) for uploads before file number is assigned. */
+export function buildS3KeyWithId(
+  params: Omit<Parameters<typeof buildS3Key>[0], 'fileNumber'> & { fileId: string }
+): string {
+  return [
+    slug(params.state),
+    slug(params.district),
+    slug(params.block),
+    slug(params.place),
+    slug(params.board),
+    slug(params.school),
+    slug(params.medium),
+    slug(params.classGrade),
+    slug(params.subject),
+    slug(params.sampleType),
+    slug(params.gender),
+    slug(params.hand),
+    `${params.fileId.replace(/[/\\]/g, '')}.pdf`,
   ].join('/');
 }

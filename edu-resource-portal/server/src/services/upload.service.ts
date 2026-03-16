@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   PutObjectCommand,
   DeleteObjectCommand,
@@ -7,7 +8,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
 import { prisma } from '../config/db';
 import { env } from '../config/env';
-import { buildS3Key } from '../utils/s3PathBuilder';
+import { buildS3KeyWithId } from '../utils/s3PathBuilder';
 import { issueFileNumber } from './fileNumber.service';
 import type { UploadFormData, BulkUploadRow } from '@edu-portal/shared';
 import { logger } from '../utils/logger';
@@ -28,55 +29,25 @@ export async function createUpload(
 ): Promise<UploadResult> {
   if (mimeType !== 'application/pdf') throw new Error('Only PDF files are allowed');
 
-  return prisma.$transaction(async tx => {
-    const fileNumber = await issueFileNumber(tx);
+  const fileId = randomUUID();
+  const s3Key = buildS3KeyWithId({
+    state:       env.APP_STATE,
+    district:    formData.district,
+    block:       formData.block,
+    place:       formData.place,
+    board:       formData.board,
+    school:      formData.schoolName,
+    medium:      formData.medium,
+    classGrade:  formData.classGrade,
+    subject:     formData.subject,
+    sampleType:  formData.sampleType,
+    gender:      formData.gender,
+    hand:        formData.dominantHand,
+    fileId,
+  });
 
-    const s3Key = buildS3Key({
-      state:       env.APP_STATE,
-      district:    formData.district,
-      block:       formData.block,
-      place:       formData.place,
-      board:       formData.board,
-      school:      formData.schoolName,
-      medium:      formData.medium,
-      classGrade:  formData.classGrade,
-      subject:     formData.subject,
-      sampleType:  formData.sampleType,
-      gender:      formData.gender,
-      hand:        formData.dominantHand,
-      fileNumber,
-    });
-
-    // Create DB record first (PENDING)
-    const upload = await tx.upload.create({
-      data: {
-        fileNumber,
-        s3Key,
-        s3Bucket:    env.S3_BUCKET_NAME,
-        district:    formData.district,
-        block:       formData.block,
-        place:       formData.place,
-        board:       formData.board,
-        schoolName:  formData.schoolName,
-        udiseCode:   formData.udiseCode,
-        medium:      formData.medium as any,
-        classGrade:  formData.classGrade,
-        subject:     formData.subject as any,
-        sampleType:  formData.sampleType as any,
-        gender:      formData.gender as any,
-        dominantHand: formData.dominantHand as any,
-        status:      'PENDING',
-        uploadedById,
-      },
-    });
-
-    // Upload to S3 (skipped when S3_MOCK=true — use this until DevOps provides real credentials)
-    if (env.S3_MOCK) {
-      await tx.upload.update({ where: { id: upload.id }, data: { status: 'COMPLETED' } });
-      logger.warn(`[S3_MOCK] Skipped S3 upload for ${fileNumber}. Set S3_MOCK=false with real credentials to enable.`);
-      return { id: upload.id, fileNumber, s3Key, status: 'COMPLETED' };
-    }
-
+  // Upload to S3 first. File number is only issued on success — no DB record or sequence increment on failure.
+  if (!env.S3_MOCK) {
     try {
       await s3Client.send(new PutObjectCommand({
         Bucket:      env.S3_BUCKET_NAME,
@@ -84,24 +55,86 @@ export async function createUpload(
         Body:        fileBuffer,
         ContentType: 'application/pdf',
         Metadata: {
-          fileNumber,
           district:   formData.district,
           udiseCode:  formData.udiseCode,
           uploadedBy: uploadedById,
         },
       }));
-
-      await tx.upload.update({ where: { id: upload.id }, data: { status: 'COMPLETED' } });
-      logger.info(`Upload completed: ${fileNumber} -> ${s3Key}`);
-      return { id: upload.id, fileNumber, s3Key, status: 'COMPLETED' };
     } catch (err) {
-      await tx.upload.update({
-        where: { id: upload.id },
-        data: { status: 'FAILED', errorMessage: (err as Error).message },
-      });
       throw err;
     }
-  });
+  } else {
+    logger.warn(`[S3_MOCK] Skipped S3 upload for ${fileId}. Set S3_MOCK=false with real credentials to enable.`);
+  }
+
+  // Only on successful S3 upload: issue file number and create DB record (no gaps in sequence on failure).
+  try {
+    return await prisma.$transaction(async tx => {
+      const fileNumber = await issueFileNumber(tx);
+      const upload = await tx.upload.create({
+        data: {
+          fileNumber,
+          s3Key,
+          s3Bucket:    env.S3_BUCKET_NAME,
+          district:    formData.district,
+          block:       formData.block,
+          place:       formData.place,
+          board:       formData.board,
+          schoolName:  formData.schoolName,
+          udiseCode:   formData.udiseCode,
+          medium:      formData.medium as any,
+          classGrade:  formData.classGrade,
+          subject:     formData.subject as any,
+          sampleType:  formData.sampleType as any,
+        gender:      formData.gender as any,
+        dominantHand: formData.dominantHand as any,
+          status:      'COMPLETED',
+          uploadedById,
+        },
+      });
+      logger.info(`Upload completed: ${fileNumber} -> ${s3Key}`);
+      return { id: upload.id, fileNumber, s3Key, status: 'COMPLETED' };
+    });
+  } catch (err) {
+    if (!env.S3_MOCK) {
+      try {
+        await s3Client.send(new DeleteObjectCommand({ Bucket: env.S3_BUCKET_NAME, Key: s3Key }));
+        logger.warn(`Cleaned up orphaned S3 object ${s3Key} after DB transaction failed`);
+      } catch (cleanupErr) {
+        logger.error(`Failed to clean up orphaned S3 object ${s3Key}:`, cleanupErr);
+      }
+    }
+    throw err;
+  }
+}
+
+const BULK_UPLOAD_CONCURRENCY = 5;
+
+async function runWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>
+): Promise<{ results: (R | undefined)[]; errors: { item: T; error: string }[] }> {
+  const results: (R | undefined)[] = new Array(items.length);
+  const errors: { item: T; error: string }[] = [];
+  const limit = Math.min(concurrency, items.length);
+
+  const workers = Array.from({ length: limit }, (_, workerId) =>
+    (async () => {
+      for (let i = workerId; i < items.length; i += limit) {
+        const item = items[i];
+        try {
+          const r = await fn(item);
+          results[i] = r;
+        } catch (err) {
+          errors.push({ item, error: (err as Error).message });
+        }
+      }
+    })()
+  );
+
+  await Promise.all(workers);
+  return { results, errors };
 }
 
 export async function bulkUpload(
@@ -109,41 +142,45 @@ export async function bulkUpload(
   pdfMap: Map<string, Buffer>,
   uploadedById: string
 ): Promise<{ success: number; failed: { pdfFileName: string; error: string }[] }> {
-  let success = 0;
-  const failed: { pdfFileName: string; error: string }[] = [];
+  const { validRows, missing } = rows.reduce<{ validRows: BulkUploadRow[]; missing: BulkUploadRow[] }>(
+    (acc, row) => {
+      if (pdfMap.has(row.pdfFileName)) acc.validRows.push(row);
+      else acc.missing.push(row);
+      return acc;
+    },
+    { validRows: [], missing: [] }
+  );
 
-  for (const row of rows) {
-    const pdfBuffer = pdfMap.get(row.pdfFileName);
-    if (!pdfBuffer) {
-      failed.push({ pdfFileName: row.pdfFileName, error: `PDF file not found: ${row.pdfFileName}` });
-      continue;
-    }
+  const failed: { pdfFileName: string; error: string }[] = missing.map(row => ({
+    pdfFileName: row.pdfFileName,
+    error: `PDF file not found: ${row.pdfFileName}`,
+  }));
 
-    try {
-      await createUpload(
-        {
-          district:     row.district,
-          block:        row.block,
-          place:        row.place,
-          board:        row.board,
-          schoolName:   row.schoolName,
-          udiseCode:    row.udiseCode,
-          medium:       row.medium,
-          classGrade:   row.classGrade,
-          subject:      row.subject,
-          sampleType:   row.sampleType,
-          gender:       row.gender,
-          dominantHand: row.dominantHand,
-        },
-        pdfBuffer,
-        'application/pdf',
-        uploadedById
-      );
-      success++;
-    } catch (err) {
-      failed.push({ pdfFileName: row.pdfFileName, error: (err as Error).message });
-    }
-  }
+  const { results, errors } = await runWithConcurrency(validRows, BULK_UPLOAD_CONCURRENCY, async row => {
+    const pdfBuffer = pdfMap.get(row.pdfFileName)!;
+    return createUpload(
+      {
+        district:     row.district,
+        block:        row.block,
+        place:        row.place,
+        board:        row.board,
+        schoolName:   row.schoolName,
+        udiseCode:    row.udiseCode,
+        medium:       row.medium,
+        classGrade:   row.classGrade,
+        subject:      row.subject,
+        sampleType:   row.sampleType,
+        gender:       row.gender,
+        dominantHand: row.dominantHand,
+      },
+      pdfBuffer,
+      'application/pdf',
+      uploadedById
+    );
+  });
+
+  failed.push(...errors.map(e => ({ pdfFileName: (e.item as BulkUploadRow).pdfFileName, error: e.error })));
+  const success = results.filter((r): r is UploadResult => r !== undefined).length;
 
   return { success, failed };
 }
