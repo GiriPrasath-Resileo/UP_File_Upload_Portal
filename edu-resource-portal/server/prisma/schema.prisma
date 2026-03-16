@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  UPLOADER
+}
+
+enum Medium {
+  HINDI
+  ENGLISH
+  URDU
+  SANSKRIT
+}
+
+enum Subject {
+  HINDI
+  ENGLISH
+  MATHS
+  SCIENCE
+  SOCIAL_SCIENCE
+  SANSKRIT
+}
+
+enum SampleType {
+  NOTEBOOKS
+  WORKSHEETS
+  OBJECTIVE_ASSESSMENTS
+  SUBJECTIVE_ASSESSMENTS
+  CURSIVE_WRITING_NOTEBOOKS
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum DominantHand {
+  RIGHT
+  LEFT
+  AMBIDEXTROUS
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  passwordHash   String
+  role           Role      @default(UPLOADER)
+  districtScope  String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  uploads        Upload[]
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model District {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  blocks    Block[]
+
+  @@map("districts")
+}
+
+model Block {
+  id         String   @id @default(cuid())
+  name       String
+  districtId String
+  district   District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  schools    School[]
+
+  @@unique([name, districtId])
+  @@map("blocks")
+}
+
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  udiseCode String   @unique
+  boardCode String
+  placeName String
+  blockId   String
+  block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  uploads   Upload[]
+
+  @@map("schools")
+}
+
+model Upload {
+  id           String       @id @default(cuid())
+  fileNumber   String       @unique
+  s3Key        String
+  s3Bucket     String
+  district     String
+  block        String
+  place        String
+  board        String
+  schoolName   String
+  udiseCode    String
+  medium       Medium
+  classGrade   String
+  subject      Subject
+  sampleType   SampleType
+  gender       Gender
+  dominantHand DominantHand
+  status       UploadStatus @default(PENDING)
+  uploadedById String
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  schoolId     String?
+  school       School?      @relation(fields: [schoolId], references: [id])
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("uploads")
+}
+
+model FileSequence {
+  id      Int @id @default(1)
+  lastVal Int @default(100000)
+
+  @@map("file_sequences")
+}
